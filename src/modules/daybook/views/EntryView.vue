@@ -1,9 +1,10 @@
 <template >
-    <div class="entry-title d-flex justify-content-between p-2">
+    <template v-if="entryState">
+        <div class="entry-title d-flex justify-content-between p-2">
         <div>
-            <span class="text-success fs-3 fw-bold">15</span>
-            <span class="mx-1 fs-3">Julio</span>
-            <span class="mx-2 fs-4 fw-light">2021,jueves</span>
+            <span class="text-success fs-3 fw-bold">{{ day }}</span>
+            <span class="mx-1 fs-3">{{ month }}</span>
+            <span class="mx-2 fs-4 fw-light">{{ yearDay }}</span>
             
         </div>
         <div>
@@ -16,12 +17,15 @@
                 <i class="fa fa-upload"></i>
             </button>
         </div>
-    </div>
-    <hr>
-    <div class="d-flex flex-column px-3 h-75">
-        <textarea placeholder="What happened today?"></textarea>
-    </div>
-
+        </div>
+        <hr>
+        <div class="d-flex flex-column px-3 h-75">
+            <textarea 
+            placeholder="What happened today?"
+            v-model = "entryState.text"></textarea>
+        </div>
+    </template>
+    
     <Fab
     icon ="fa-save"/>
 
@@ -34,9 +38,60 @@
 
 <script>
 import {  defineAsyncComponent} from "vue";
+import { mapGetters } from "vuex";
+import getDayMonthYear from "../helpers/getDayMonthYear";
 export default {
+    props:{
+        id:{
+            type:String,
+            required:true
+        }
+    },
     components:{
         Fab: defineAsyncComponent(() => import('../components/Fab.vue'))
+    },
+    data(){
+        return{
+            entryState:null
+        }
+    },
+    computed:{
+
+        ...mapGetters('journal',['getEntryById']),
+
+        day(){
+            const {day} = getDayMonthYear(this.entryState.date)
+            return day
+        },
+        month(){
+            const {month} = getDayMonthYear(this.entryState.date)
+            return month
+        },
+        yearDay(){
+            const {yearDay} = getDayMonthYear(this.entryState.date)
+            return yearDay
+        }
+    },
+    methods: {
+        loadEntry(){
+            const entry =this.getEntryById(this.id)
+            
+            //si no existe la entrada se redirecciona al usuario
+            if(!entry) this.$router.push({name: 'no-entry'})
+
+            //si existe
+            this.entryState = entry
+        }
+    },
+    created(){
+        this.loadEntry()
+        
+    },
+
+    watch:{
+        id(){
+            this.loadEntry()
+        }
     }
 }
 </script>
