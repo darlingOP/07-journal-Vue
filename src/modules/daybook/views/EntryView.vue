@@ -8,11 +8,25 @@
             
         </div>
         <div>
-            <button class="btn btn-danger mx-2">
+
+            <!--Trabajar por referencia para manipularlo sin monstrarlo-->
+            <input 
+            type="file" 
+            @change="onSelectedImg"
+            ref="imgSelector"
+            v-show="false"
+            accept="image/png, image/jpeg">
+
+            <button 
+            v-if="entryState.id"
+            class="btn btn-danger mx-2"
+            @click="onDeleteEntry">
                 <i class="fa fa-trash-alt"></i>
             </button>
 
-            <button class="btn btn-primary">
+            <button 
+            class="btn btn-primary"
+            @click="onSelectImg">
                 subir foto
                 <i class="fa fa-upload"></i>
             </button>
@@ -27,18 +41,26 @@
     </template>
     
     <Fab
-    icon ="fa-save"/>
+    icon ="fa-save"
+    @on:click="saveEntry"/>
 
-    <!--buscar imagen-->
-    <img 
+   
+    <!-- <img 
     src="https://www.xtrafondos.com/wallpapers/resized/guacamayos-1016.jpg?s=large" 
+    alt="entry-picture"
+    class="img-thumbnail"> -->
+
+    <img 
+    v-if="localImg"
+    :src="localImg" 
     alt="entry-picture"
     class="img-thumbnail">
 </template>
 
 <script>
 import {  defineAsyncComponent} from "vue";
-import { mapGetters } from "vuex";
+import { mapGetters, mapActions } from "vuex";
+import Swal from "sweetalert2";
 import getDayMonthYear from "../helpers/getDayMonthYear";
 export default {
     props:{
@@ -52,7 +74,9 @@ export default {
     },
     data(){
         return{
-            entryState:null
+            entryState:null,
+            localImg:null,
+            file:null
         }
     },
     computed:{
@@ -74,13 +98,103 @@ export default {
     },
     methods: {
         loadEntry(){
-            const entry =this.getEntryById(this.id)
-            
-            //si no existe la entrada se redirecciona al usuario
-            if(!entry) this.$router.push({name: 'no-entry'})
 
+            let entry
+
+            if (this.id === 'new'){
+                entry ={
+                    text:'',
+                    date: new Date().getTime()
+                }
+            }else{
+                
+                entry =this.getEntryById(this.id)
+                
+                //si no existe la entrada se redirecciona al usuario
+                if(!entry) return this.$router.push({name: 'no-entry'})
+    
+            }
             //si existe
             this.entryState = entry
+        },
+
+        ...mapActions('journal',['updateEntry','createEntry','deleteEntry']),
+
+        async saveEntry(){
+            
+            new Swal({
+                title:'Espere por favor',
+                allowOutsideClick:false,
+            })
+
+            Swal.showLoading()
+
+            if(this.entryState.id){
+                //Actualizar
+                await this.updateEntry(this.entryState)
+            }else{
+                // crear nueva entrada
+                console.log('post nueva entrada');
+
+               const id = await this.createEntry(this.entryState)
+
+               //redirectTo para mostrar la nueva entrada creada
+               this.$router.push({name:'entry', params:{id}})
+
+
+            }
+            
+            Swal.fire('Guardado','Entrada registrada con exito','success')
+        },
+
+        async onDeleteEntry(){
+            
+            const {isConfirmed} = await Swal.fire({
+                title:'¿Estás seguro?',
+                text:'Una vez borrado no se puede recuperar',
+                showDenyButton:true,
+                confirmButtonText:'Sí, estoy seguro'
+            })
+
+            if(isConfirmed){
+                new Swal({
+                    title:'Espere por favor',
+                    allowOutsideClick:false
+                })
+
+                Swal.showLoading()
+                await this.deleteEntry(this.entryState.id)
+                this.$router.push({name:'no-entry'})
+
+                Swal.fire('Eliminado','','success')
+            }
+
+           
+        },
+
+        onSelectedImg(event){
+            
+            const file = event.target.files[0]
+
+            if(!file){
+                //solo un return para que continue
+                this.localImg=null
+                this.file = null
+                return
+            }
+
+            this.file = file
+
+            //instancia FileReader ya viene en js
+            const fr = new FileReader()
+            fr.onload = () => this.localImg = fr.result
+            fr.readAsDataURL(file)
+           
+
+
+        },
+        onSelectImg(){
+            this.$refs.imgSelector.click()
         }
     },
     created(){
