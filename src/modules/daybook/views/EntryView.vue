@@ -65,6 +65,7 @@ import Swal from "sweetalert2";
 import getDayMonthYear from "../helpers/getDayMonthYear";
 import uploadImage from "@/modules/daybook/helpers/uploadImage";
 export default {
+    name:'EntryView',
     props:{
         id:{
             type:String,
@@ -132,7 +133,7 @@ export default {
             Swal.showLoading()
 
            const picture = await uploadImage(this.file)
-           this.entryState.picture = picture
+           this.entryState.picture = picture.secure_url
 
             if(this.entryState.id){
                 //Actualizar
