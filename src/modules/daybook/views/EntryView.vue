@@ -45,10 +45,10 @@
     @on:click="saveEntry"/>
 
    
-    <!-- <img 
-    src="https://www.xtrafondos.com/wallpapers/resized/guacamayos-1016.jpg?s=large" 
+     <img v-if="entryState.picture && !localImg"
+    :src="entryState.picture" 
     alt="entry-picture"
-    class="img-thumbnail"> -->
+    class="img-thumbnail">
 
     <img 
     v-if="localImg"
@@ -61,7 +61,9 @@
 import {  defineAsyncComponent} from "vue";
 import { mapGetters, mapActions } from "vuex";
 import Swal from "sweetalert2";
+
 import getDayMonthYear from "../helpers/getDayMonthYear";
+import uploadImage from "@/modules/daybook/helpers/uploadImage";
 export default {
     props:{
         id:{
@@ -129,6 +131,9 @@ export default {
 
             Swal.showLoading()
 
+           const picture = await uploadImage(this.file)
+           this.entryState.picture = picture
+
             if(this.entryState.id){
                 //Actualizar
                 await this.updateEntry(this.entryState)
@@ -144,6 +149,7 @@ export default {
 
             }
             
+            this.file = null
             Swal.fire('Guardado','Entrada registrada con exito','success')
         },
 
