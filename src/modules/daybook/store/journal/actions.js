@@ -37,9 +37,10 @@ export const updateEntry = async( {commit}, entry)  => { //entry debe ser parame
     //hacer peticion await del journal 
     const resp = await journalApi.put(`/entries/${entry.id}.json`, dataToSave)
 
+    dataToSave.id = entry.id
     //commut mutasion update entry
                         //uso del spread para evitar que el objeto se pase por referencia
-    commit('updateEntry', {...entry})
+    commit('updateEntry', {...dataToSave})
 }
 
 export const createEntry = async( {commit}, entry) => {
